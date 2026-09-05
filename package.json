@@ -1,0 +1,48 @@
+{
+  "name": "pi-smart-zone",
+  "version": "0.1.0",
+  "description": "A lightweight Pi extension that shows absolute context usage and highlights the smart-zone boundary",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "context-window"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "author": "Yasuhito Takamiya",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": ">=0.85.1"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.85.1",
+    "@types/node": "^22.19.0",
+    "typescript": "^5.9.3"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yasuhito/pi-smart-zone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yasuhito/pi-smart-zone/issues"
+  },
+  "homepage": "https://github.com/yasuhito/pi-smart-zone#readme",
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test"
+  },
+  "files": [
+    "index.ts",
+    "src",
+    "README.md",
+    "LICENSE"
+  ]
+}
