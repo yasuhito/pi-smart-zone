@@ -21,16 +21,24 @@ export interface RenderedStatus {
   color: "dim" | "warning" | "error";
 }
 
+const ZONE_PRESENTATION = {
+  normal: { label: "smart-zone", color: "dim" },
+  warning: { label: "smart-zone", color: "warning" },
+  error: { label: "dumb-zone", color: "error" },
+} as const satisfies Record<
+  Zone,
+  { label: string; color: RenderedStatus["color"] }
+>;
+
 export function renderStatus(
   tokens: number | null | undefined,
   config: SmartZoneConfig,
 ): RenderedStatus {
-  const classifiedTokens = tokens ?? 0;
-  const zone = classifyZone(classifiedTokens, config);
-  const label = zone === "error" ? "dumb-zone" : "smart-zone";
-  const current = tokens === null ? "?" : formatTokens(classifiedTokens);
+  const effectiveTokens = tokens ?? 0;
+  const zone = classifyZone(effectiveTokens, config);
+  const { label, color } = ZONE_PRESENTATION[zone];
+  const current = tokens === null ? "?" : formatTokens(effectiveTokens);
   const limit = formatTokens(config.redAt);
-  const color = zone === "normal" ? "dim" : zone;
 
   return {
     text: `${label.padEnd(10)} ${current.padStart(5)}/${limit.padStart(5)}`,

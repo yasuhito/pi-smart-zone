@@ -29,8 +29,13 @@ export default function smartZone(pi: ExtensionAPI): void {
     }
   });
 
-  pi.on("message_end", (_event, ctx) => updateStatus(ctx));
-  pi.on("session_compact", (_event, ctx) => updateStatus(ctx));
-  pi.on("session_tree", (_event, ctx) => updateStatus(ctx));
-  pi.on("model_select", (_event, ctx) => updateStatus(ctx));
+  const updateStatusAfterEvent = (
+    _event: unknown,
+    ctx: ExtensionContext,
+  ): void => updateStatus(ctx);
+
+  pi.on("message_end", updateStatusAfterEvent);
+  pi.on("session_compact", updateStatusAfterEvent);
+  pi.on("session_tree", updateStatusAfterEvent);
+  pi.on("model_select", updateStatusAfterEvent);
 }
