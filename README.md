@@ -12,6 +12,8 @@ dumb-zone   152k/ 150k  # error color
 
 ## Install
 
+Published as [`pi-smart-zone`](https://www.npmjs.com/package/pi-smart-zone) on npm.
+
 ```bash
 pi install npm:pi-smart-zone
 ```
