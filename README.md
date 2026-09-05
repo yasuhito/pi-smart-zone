@@ -1,6 +1,6 @@
 # pi-smart-zone
 
-A lightweight [Pi](https://github.com/earendil-works/pi-mono) extension that keeps absolute context usage visible and changes color around the 150k-token “smart zone” boundary.
+A lightweight [Pi](https://github.com/earendil-works/pi-mono) extension that keeps absolute context usage visible, changes color around the 150k-token “smart zone” boundary, and lets the agent inspect its context usage when asked.
 
 It preserves Pi's standard footer. The extension adds only a small persistent status line:
 
@@ -30,7 +30,13 @@ By default:
 
 The thresholds are absolute token counts; they do not change with the selected model's context window. Before context usage is available, the status starts at `0`. If Pi reports usage as unknown immediately after compaction, it displays `?` until usage is available again.
 
-The extension does not replace the footer, send notifications at thresholds, compact automatically, or add commands and tools.
+The extension does not replace the footer, send notifications at thresholds, compact automatically, or add commands.
+
+### Agent tool
+
+The extension registers a read-only `context_usage` tool, described for use only when the user explicitly asks about current context usage, the context window, or remaining context capacity. It returns the estimated context usage and the active model's configured context window as full token counts; it does not return the smart-zone classification or thresholds.
+
+Immediately after compaction, context usage can be temporarily unknown until the next model response. In that state, the tool succeeds with `tokens: null` in its structured details and still returns the context window. If context information is unavailable for the active model altogether, the tool returns an error.
 
 ## Configuration
 
