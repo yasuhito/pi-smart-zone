@@ -5,10 +5,16 @@
     "forceConsistentCasingInFileNames": true,
     "module": "NodeNext",
     "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2023"
+    "target": "ES2023",
+    "types": ["node"]
   },
   "include": ["index.ts", "src/**/*.ts", "scripts/**/*.ts", "test/**/*.ts"]
 }

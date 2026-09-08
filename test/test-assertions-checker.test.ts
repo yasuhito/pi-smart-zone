@@ -4,11 +4,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 function checkFixture(name: string) {
-  const checker = join(
-    process.cwd(),
-    "scripts",
-    "check-test-assertions.ts",
-  );
+  const checker = join(process.cwd(), "scripts", "check-test-assertions.ts");
   const fixture = join("fixtures", "test-assertions", `${name}.fixture.ts`);
   return spawnSync(process.execPath, [checker, fixture], {
     cwd: process.cwd(),

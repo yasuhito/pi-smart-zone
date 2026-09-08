@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@babel/parser": "^8.0.4",
+    "@biomejs/biome": "^2.5.11",
     "@earendil-works/pi-coding-agent": "^0.85.1",
     "@types/node": "^22.19.0",
     "typescript": "^5.9.3"
@@ -38,9 +39,14 @@
   "homepage": "https://github.com/yasuhito/pi-smart-zone#readme",
   "scripts": {
     "test": "node --test",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include='index.ts' --test-coverage-include='src/*.ts' --test-coverage-lines=90 --test-coverage-branches=85 --test-coverage-functions=100 test/*.test.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
     "check:test-assertions": "node scripts/check-test-assertions.ts",
-    "check": "npm run typecheck && npm run check:test-assertions && npm test"
+    "check:package": "npm pack --dry-run",
+    "check": "npm run lint && npm run typecheck && npm run check:test-assertions && npm run coverage && npm run check:package"
   },
   "files": [
     "index.ts",

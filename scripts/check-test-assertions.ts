@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import process from "node:process";
 
@@ -49,7 +49,9 @@ function isNode(value: unknown): value is AstNode {
 }
 
 function identifierName(node: unknown): string | undefined {
-  return isNode(node) && node.type === "Identifier" && typeof node.name === "string"
+  return isNode(node) &&
+    node.type === "Identifier" &&
+    typeof node.name === "string"
     ? node.name
     : undefined;
 }
@@ -68,10 +70,13 @@ function collectImports(program: AstNode): Imports {
   const assertionFunctions = new Set<string>();
   const assertionNamespaces = new Set<string>();
   const testFunctions = new Set<string>();
-  const statements = Array.isArray(program.body) ? program.body.filter(isNode) : [];
+  const statements = Array.isArray(program.body)
+    ? program.body.filter(isNode)
+    : [];
 
   for (const statement of statements) {
-    if (statement.type !== "ImportDeclaration" || !isNode(statement.source)) continue;
+    if (statement.type !== "ImportDeclaration" || !isNode(statement.source))
+      continue;
     const moduleName = statement.source.value;
     if (typeof moduleName !== "string") continue;
     const specifiers = Array.isArray(statement.specifiers)
@@ -83,7 +88,8 @@ function collectImports(program: AstNode): Imports {
       if (localName === undefined) continue;
 
       if (moduleName === "node:test") {
-        if (specifier.type === "ImportDefaultSpecifier") testFunctions.add(localName);
+        if (specifier.type === "ImportDefaultSpecifier")
+          testFunctions.add(localName);
         if (specifier.type === "ImportSpecifier") {
           const importedName = identifierName(specifier.imported);
           if (importedName === "test" || importedName === "it") {
@@ -101,7 +107,10 @@ function collectImports(program: AstNode): Imports {
         }
         if (specifier.type === "ImportSpecifier") {
           const importedName = identifierName(specifier.imported);
-          if (importedName !== undefined && assertionMethods.has(importedName)) {
+          if (
+            importedName !== undefined &&
+            assertionMethods.has(importedName)
+          ) {
             assertionFunctions.add(localName);
           }
         }
@@ -113,7 +122,11 @@ function collectImports(program: AstNode): Imports {
 }
 
 function memberNames(node: unknown): readonly [string, string] | undefined {
-  if (!isNode(node) || node.type !== "MemberExpression" || node.computed === true) {
+  if (
+    !isNode(node) ||
+    node.type !== "MemberExpression" ||
+    node.computed === true
+  ) {
     return undefined;
   }
   const objectName = identifierName(node.object);
@@ -123,7 +136,10 @@ function memberNames(node: unknown): readonly [string, string] | undefined {
     : undefined;
 }
 
-function isImportedTestCall(call: AstNode, testFunctions: ReadonlySet<string>): boolean {
+function isImportedTestCall(
+  call: AstNode,
+  testFunctions: ReadonlySet<string>,
+): boolean {
   const calleeName = identifierName(call.callee);
   if (calleeName !== undefined) return testFunctions.has(calleeName);
   const member = memberNames(call.callee);
@@ -134,9 +150,14 @@ function isImportedTestCall(call: AstNode, testFunctions: ReadonlySet<string>): 
   );
 }
 
-function isContextTestCall(call: AstNode, contextNames: ReadonlySet<string>): boolean {
+function isContextTestCall(
+  call: AstNode,
+  contextNames: ReadonlySet<string>,
+): boolean {
   const member = memberNames(call.callee);
-  return member !== undefined && contextNames.has(member[0]) && member[1] === "test";
+  return (
+    member !== undefined && contextNames.has(member[0]) && member[1] === "test"
+  );
 }
 
 function isAssertionCall(call: AstNode, imports: Imports): boolean {
@@ -156,10 +177,13 @@ function isAssertionCall(call: AstNode, imports: Imports): boolean {
 }
 
 function callbackOf(call: AstNode): AstNode | undefined {
-  const argumentsList = Array.isArray(call.arguments) ? call.arguments.filter(isNode) : [];
+  const argumentsList = Array.isArray(call.arguments)
+    ? call.arguments.filter(isNode)
+    : [];
   const callback = argumentsList.at(-1);
   return callback !== undefined &&
-      (callback.type === "ArrowFunctionExpression" || callback.type === "FunctionExpression")
+    (callback.type === "ArrowFunctionExpression" ||
+      callback.type === "FunctionExpression")
     ? callback
     : undefined;
 }
@@ -181,7 +205,8 @@ function countDirectAssertions(callback: AstNode, imports: Imports): number {
 
   const visit = (node: AstNode): void => {
     if (node !== body && isFunction(node)) return;
-    if (node.type === "CallExpression" && isAssertionCall(node, imports)) count += 1;
+    if (node.type === "CallExpression" && isAssertionCall(node, imports))
+      count += 1;
     for (const child of childNodes(node)) visit(child);
   };
 
@@ -190,7 +215,9 @@ function countDirectAssertions(callback: AstNode, imports: Imports): number {
 }
 
 function testTitle(call: AstNode): string {
-  const argumentsList = Array.isArray(call.arguments) ? call.arguments.filter(isNode) : [];
+  const argumentsList = Array.isArray(call.arguments)
+    ? call.arguments.filter(isNode)
+    : [];
   const title = argumentsList[0];
   return title?.type === "StringLiteral" && typeof title.value === "string"
     ? title.value
@@ -198,26 +225,44 @@ function testTitle(call: AstNode): string {
 }
 
 function firstParameterName(callback: AstNode): string | undefined {
-  const parameters = Array.isArray(callback.params) ? callback.params.filter(isNode) : [];
+  const parameters = Array.isArray(callback.params)
+    ? callback.params.filter(isNode)
+    : [];
   return identifierName(parameters[0]);
 }
 
-function sourceLocation(node: AstNode): { readonly column: number; readonly line: number } {
+function sourceLocation(node: AstNode): {
+  readonly column: number;
+  readonly line: number;
+} {
   const location = node.loc;
-  if (typeof location !== "object" || location === null || !("start" in location)) {
+  if (
+    typeof location !== "object" ||
+    location === null ||
+    !("start" in location)
+  ) {
     return { column: 1, line: 1 };
   }
   const start = location.start;
-  if (typeof start !== "object" || start === null) return { column: 1, line: 1 };
-  const column = "column" in start && typeof start.column === "number"
-    ? start.column + 1
-    : 1;
-  const line = "line" in start && typeof start.line === "number" ? start.line : 1;
+  if (typeof start !== "object" || start === null)
+    return { column: 1, line: 1 };
+  const column =
+    "column" in start && typeof start.column === "number"
+      ? start.column + 1
+      : 1;
+  const line =
+    "line" in start && typeof start.line === "number" ? start.line : 1;
   return { column, line };
 }
 
-function checkSource(fileName: string, sourceText: string): ReadonlyArray<Diagnostic> {
-  const file = parse(sourceText, { sourceType: "module", plugins: ["typescript"] });
+function checkSource(
+  fileName: string,
+  sourceText: string,
+): ReadonlyArray<Diagnostic> {
+  const file = parse(sourceText, {
+    sourceType: "module",
+    plugins: ["typescript"],
+  });
   const program = file.program as unknown as AstNode;
   const imports = collectImports(program);
   const diagnostics: Array<Diagnostic> = [];
@@ -272,9 +317,10 @@ function testFiles(directory: string): ReadonlyArray<string> {
 }
 
 const requestedFiles = process.argv.slice(2);
-const files = requestedFiles.length > 0
-  ? requestedFiles.map((file) => resolve(file))
-  : testFiles(resolve("test"));
+const files =
+  requestedFiles.length > 0
+    ? requestedFiles.map((file) => resolve(file))
+    : testFiles(resolve("test"));
 const diagnostics = files.flatMap((file) => {
   const displayName = relative(process.cwd(), file).split(sep).join("/");
   return checkSource(displayName, readFileSync(file, "utf8"));

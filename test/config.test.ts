@@ -27,7 +27,7 @@ test("malformed JSON uses all defaults with a warning", () => {
 const invalidConfigurations = [
   "null",
   "[]",
-  '{}',
+  "{}",
   '{"yellowAt":0,"redAt":150000}',
   '{"yellowAt":140000.5,"redAt":150000}',
   '{"yellowAt":"140000","redAt":150000}',

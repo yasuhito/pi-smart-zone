@@ -33,12 +33,20 @@ export function resolveConfig(contents: string | undefined): ResolvedConfig {
 
   try {
     const parsed: unknown = JSON.parse(contents);
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
       return INVALID_CONFIG;
     }
 
     const { yellowAt, redAt } = parsed as Record<string, unknown>;
-    if (!isPositiveInteger(yellowAt) || !isPositiveInteger(redAt) || yellowAt >= redAt) {
+    if (
+      !isPositiveInteger(yellowAt) ||
+      !isPositiveInteger(redAt) ||
+      yellowAt >= redAt
+    ) {
       return INVALID_CONFIG;
     }
 

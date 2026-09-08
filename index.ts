@@ -16,10 +16,7 @@ export default function smartZone(pi: ExtensionAPI): void {
   const updateStatus = (ctx: ExtensionContext): void => {
     const usage = ctx.getContextUsage();
     const status = renderStatus(usage?.tokens, config);
-    ctx.ui.setStatus(
-      STATUS_KEY,
-      ctx.ui.theme.fg(status.color, status.text),
-    );
+    ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg(status.color, status.text));
   };
 
   pi.registerTool({
@@ -34,9 +31,10 @@ export default function smartZone(pi: ExtensionAPI): void {
         throw new Error("Context usage is unavailable for the active model.");
       }
 
-      const usageText = usage.tokens === null
-        ? "Context usage is temporarily unavailable after compaction."
-        : `Estimated context usage: ${usage.tokens} tokens`;
+      const usageText =
+        usage.tokens === null
+          ? "Context usage is temporarily unavailable after compaction."
+          : `Estimated context usage: ${usage.tokens} tokens`;
 
       return {
         content: [
