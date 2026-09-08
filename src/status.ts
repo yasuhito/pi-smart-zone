@@ -22,12 +22,12 @@ export interface RenderedStatus {
 }
 
 const ZONE_PRESENTATION = {
-  normal: { label: "smart-zone", color: "dim" },
-  warning: { label: "smart-zone", color: "warning" },
-  error: { label: "dumb-zone", color: "error" },
+  normal: { indicator: "✓", label: "smart-zone", color: "dim" },
+  warning: { indicator: "!", label: "smart-zone", color: "warning" },
+  error: { indicator: "✗", label: "dumb-zone", color: "error" },
 } as const satisfies Record<
   Zone,
-  { label: string; color: RenderedStatus["color"] }
+  { indicator: string; label: string; color: RenderedStatus["color"] }
 >;
 
 export function renderStatus(
@@ -36,12 +36,13 @@ export function renderStatus(
 ): RenderedStatus {
   const effectiveTokens = tokens ?? 0;
   const zone = classifyZone(effectiveTokens, config);
-  const { label, color } = ZONE_PRESENTATION[zone];
+  const presentation = ZONE_PRESENTATION[zone];
+  const indicator = tokens === null ? "?" : presentation.indicator;
   const current = tokens === null ? "?" : formatTokens(effectiveTokens);
   const limit = formatTokens(config.redAt);
 
   return {
-    text: `${label.padEnd(10)} ${current.padStart(5)}/${limit.padStart(5)}`,
-    color,
+    text: `${indicator} ${presentation.label.padEnd(10)} ${current.padStart(5)}/${limit.padStart(5)}`,
+    color: presentation.color,
   };
 }

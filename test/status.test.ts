@@ -21,26 +21,26 @@ test("token counts use Pi-style compact formatting", () => {
 
 test("missing and explicitly unknown usage remain distinguishable", () => {
   assert.deepEqual(renderStatus(undefined, config), {
-    text: "smart-zone     0/ 150k",
+    text: "✓ smart-zone     0/ 150k",
     color: "dim",
   });
   assert.deepEqual(renderStatus(null, config), {
-    text: "smart-zone     ?/ 150k",
+    text: "? smart-zone     ?/ 150k",
     color: "dim",
   });
 });
 
 test("status rendering uses fixed-width fields, labels, and theme colors", () => {
   assert.deepEqual(renderStatus(87_000, config), {
-    text: "smart-zone   87k/ 150k",
+    text: "✓ smart-zone   87k/ 150k",
     color: "dim",
   });
   assert.deepEqual(renderStatus(142_000, config), {
-    text: "smart-zone  142k/ 150k",
+    text: "! smart-zone  142k/ 150k",
     color: "warning",
   });
   assert.deepEqual(renderStatus(152_000, config), {
-    text: "dumb-zone   152k/ 150k",
+    text: "✗ dumb-zone   152k/ 150k",
     color: "error",
   });
 });
