@@ -50,6 +50,19 @@ test("checker follows aliased test and assertion imports", () => {
   assert.equal(result.status, 0);
 });
 
+test("checker reports multiple assertions in a named callback", () => {
+  const result = checkFixture("named-callback");
+
+  assert.deepEqual(
+    { status: result.status, stderr: result.stderr },
+    {
+      status: 1,
+      stderr:
+        'fixtures/test-assertions/named-callback.fixture.ts:9:1: test "named callback" must contain exactly one direct assertion; found 2\n',
+    },
+  );
+});
+
 test("checker does not count an assertion hidden in a helper", () => {
   const result = checkFixture("helper-assertion");
 

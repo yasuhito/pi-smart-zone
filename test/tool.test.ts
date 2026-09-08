@@ -34,7 +34,9 @@ function registerExtension(): RegisteredExtension {
   } as unknown as ExtensionAPI;
 
   smartZone(pi);
-  assert.ok(registeredTool);
+  if (registeredTool === undefined) {
+    throw new Error("smart-zone did not register the context_usage tool");
+  }
   return { tool: registeredTool, handlers };
 }
 

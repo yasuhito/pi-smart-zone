@@ -18,7 +18,7 @@ Published as [`pi-smart-zone`](https://www.npmjs.com/package/pi-smart-zone) on n
 pi install npm:pi-smart-zone
 ```
 
-Requires Node.js 22.19.0 or newer and Pi 0.85.1 or newer.
+Requires Node.js 22.19.0 or newer and Pi 0.80.4 or newer.
 
 ## Behavior
 

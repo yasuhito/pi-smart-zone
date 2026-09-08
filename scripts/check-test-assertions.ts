@@ -176,16 +176,41 @@ function isAssertionCall(call: AstNode, imports: Imports): boolean {
   );
 }
 
-function callbackOf(call: AstNode): AstNode | undefined {
+function collectFunctionDeclarations(
+  program: AstNode,
+): ReadonlyMap<string, AstNode> {
+  const declarations = new Map<string, AstNode>();
+  const statements = Array.isArray(program.body)
+    ? program.body.filter(isNode)
+    : [];
+
+  for (const statement of statements) {
+    if (statement.type !== "FunctionDeclaration") continue;
+    const name = identifierName(statement.id);
+    if (name !== undefined) declarations.set(name, statement);
+  }
+  return declarations;
+}
+
+function callbackOf(
+  call: AstNode,
+  functionDeclarations: ReadonlyMap<string, AstNode>,
+): AstNode | undefined {
   const argumentsList = Array.isArray(call.arguments)
     ? call.arguments.filter(isNode)
     : [];
   const callback = argumentsList.at(-1);
-  return callback !== undefined &&
-    (callback.type === "ArrowFunctionExpression" ||
-      callback.type === "FunctionExpression")
-    ? callback
-    : undefined;
+  if (callback === undefined) return undefined;
+  if (
+    callback.type === "ArrowFunctionExpression" ||
+    callback.type === "FunctionExpression"
+  ) {
+    return callback;
+  }
+  const callbackName = identifierName(callback);
+  return callbackName === undefined
+    ? undefined
+    : functionDeclarations.get(callbackName);
 }
 
 function isFunction(node: AstNode): boolean {
@@ -265,6 +290,7 @@ function checkSource(
   });
   const program = file.program as unknown as AstNode;
   const imports = collectImports(program);
+  const functionDeclarations = collectFunctionDeclarations(program);
   const diagnostics: Array<Diagnostic> = [];
 
   const visit = (node: AstNode, contextNames: ReadonlySet<string>): void => {
@@ -273,7 +299,7 @@ function checkSource(
         isImportedTestCall(node, imports.testFunctions) ||
         isContextTestCall(node, contextNames);
       if (isTest) {
-        const callback = callbackOf(node);
+        const callback = callbackOf(node, functionDeclarations);
         if (callback !== undefined) {
           const count = countDirectAssertions(callback, imports);
           if (count !== 1) {
