@@ -19,15 +19,14 @@ test("token counts use Pi-style compact formatting", () => {
   assert.equal(formatTokens(1_200_000), "1.2M");
 });
 
-test("missing and explicitly unknown usage remain distinguishable", () => {
-  assert.deepEqual(renderStatus(undefined, config), {
-    text: "✓ smart-zone     0/ 150k",
-    color: "dim",
-  });
-  assert.deepEqual(renderStatus(null, config), {
+test("unavailable usage is shown as unknown", () => {
+  const unknownStatus = {
     text: "? smart-zone     ?/ 150k",
     color: "dim",
-  });
+  };
+
+  assert.deepEqual(renderStatus(undefined, config), unknownStatus);
+  assert.deepEqual(renderStatus(null, config), unknownStatus);
 });
 
 test("status rendering uses fixed-width fields, labels, and theme colors", () => {

@@ -37,8 +37,8 @@ export function renderStatus(
   const effectiveTokens = tokens ?? 0;
   const zone = classifyZone(effectiveTokens, config);
   const presentation = ZONE_PRESENTATION[zone];
-  const indicator = tokens === null ? "?" : presentation.indicator;
-  const current = tokens === null ? "?" : formatTokens(effectiveTokens);
+  const indicator = tokens == null ? "?" : presentation.indicator;
+  const current = tokens == null ? "?" : formatTokens(effectiveTokens);
   const limit = formatTokens(config.redAt);
 
   return {

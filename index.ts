@@ -66,7 +66,7 @@ export default function smartZone(pi: ExtensionAPI): void {
     ctx: ExtensionContext,
   ): void => updateStatus(ctx);
 
-  pi.on("message_end", updateStatusAfterEvent);
+  pi.on("agent_settled", updateStatusAfterEvent);
   pi.on("session_compact", updateStatusAfterEvent);
   pi.on("session_tree", updateStatusAfterEvent);
   pi.on("model_select", updateStatusAfterEvent);
