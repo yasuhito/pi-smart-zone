@@ -11,3 +11,7 @@ The default five-role triage vocabulary is used. See `docs/agents/triage-labels.
 ### Domain docs
 
 This repository uses a single-context layout. See `docs/agents/domain.md`.
+
+### Tests
+
+Each test case must verify one behavior with exactly one direct assertion. Split tests by observable behavior rather than hiding assertions in helper functions.

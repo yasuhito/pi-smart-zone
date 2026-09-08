@@ -116,7 +116,7 @@ test("context_usage fails when context information is unavailable", async () => 
   );
 });
 
-test("status refreshes after compaction and the next settled run", async () => {
+function createStatusFixture() {
   const extension = registerExtension();
   let tokens: number | null = 87_000;
   const statuses: string[] = [];
@@ -135,33 +135,72 @@ test("status refreshes after compaction and the next settled run", async () => {
     },
   } as unknown as ExtensionContext;
 
-  await emit(extension.handlers, "session_start", ctx);
-  assert.match(statuses.at(-1) ?? "", /87k/);
+  return {
+    ctx,
+    extension,
+    latestStatus: () => statuses.at(-1) ?? "",
+    setTokens: (value: number | null) => {
+      tokens = value;
+    },
+  };
+}
 
-  tokens = null;
-  await emit(extension.handlers, "session_compact", ctx);
-  assert.match(statuses.at(-1) ?? "", /\?/);
+test("session start displays the current usage", async () => {
+  const fixture = createStatusFixture();
 
-  tokens = 90_000;
-  assert.equal(extension.handlers.has("message_end"), false);
-  assert.match(statuses.at(-1) ?? "", /\?/);
+  await emit(fixture.extension.handlers, "session_start", fixture.ctx);
 
-  await emit(extension.handlers, "agent_settled", ctx);
-  assert.doesNotMatch(statuses.at(-1) ?? "", /\?/);
-  assert.match(statuses.at(-1) ?? "", /90k/);
+  assert.match(fixture.latestStatus(), /87k/);
 });
 
-test("status refreshes for session and model changes", async () => {
-  const extension = registerExtension();
-  const expectedEvents = [
-    "session_start",
-    "session_compact",
-    "session_tree",
-    "model_select",
-    "agent_settled",
-  ];
+test("session compaction displays unknown usage", async () => {
+  const fixture = createStatusFixture();
+  fixture.setTokens(null);
 
-  for (const event of expectedEvents) {
-    assert.equal(extension.handlers.has(event), true, `${event} handler missing`);
-  }
+  await emit(fixture.extension.handlers, "session_compact", fixture.ctx);
+
+  assert.match(fixture.latestStatus(), /\?/);
 });
+
+test("message end does not trigger a status refresh", () => {
+  const fixture = createStatusFixture();
+
+  assert.equal(fixture.extension.handlers.has("message_end"), false);
+});
+
+test("status remains unknown until the agent settles", async () => {
+  const fixture = createStatusFixture();
+  fixture.setTokens(null);
+  await emit(fixture.extension.handlers, "session_compact", fixture.ctx);
+
+  fixture.setTokens(90_000);
+
+  assert.match(fixture.latestStatus(), /\?/);
+});
+
+test("agent settled refreshes the status with current usage", async () => {
+  const fixture = createStatusFixture();
+  fixture.setTokens(null);
+  await emit(fixture.extension.handlers, "session_compact", fixture.ctx);
+  fixture.setTokens(90_000);
+
+  await emit(fixture.extension.handlers, "agent_settled", fixture.ctx);
+
+  assert.match(fixture.latestStatus(), /90k/);
+});
+
+const statusRefreshEvents = [
+  "session_start",
+  "session_compact",
+  "session_tree",
+  "model_select",
+  "agent_settled",
+];
+
+for (const event of statusRefreshEvents) {
+  test(`${event} has a status refresh handler`, () => {
+    const extension = registerExtension();
+
+    assert.equal(extension.handlers.has(event), true);
+  });
+}

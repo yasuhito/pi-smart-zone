@@ -24,23 +24,23 @@ test("malformed JSON uses all defaults with a warning", () => {
   });
 });
 
-test("invalid threshold configurations use all defaults with a warning", () => {
-  const invalidConfigurations = [
-    "null",
-    "[]",
-    '{}',
-    '{"yellowAt":0,"redAt":150000}',
-    '{"yellowAt":140000.5,"redAt":150000}',
-    '{"yellowAt":"140000","redAt":150000}',
-    '{"yellowAt":140000,"redAt":140000}',
-    '{"yellowAt":160000,"redAt":150000}',
-    '{"yellowAt":140000,"redAt":1e999}',
-  ];
+const invalidConfigurations = [
+  "null",
+  "[]",
+  '{}',
+  '{"yellowAt":0,"redAt":150000}',
+  '{"yellowAt":140000.5,"redAt":150000}',
+  '{"yellowAt":"140000","redAt":150000}',
+  '{"yellowAt":140000,"redAt":140000}',
+  '{"yellowAt":160000,"redAt":150000}',
+  '{"yellowAt":140000,"redAt":1e999}',
+];
 
-  for (const contents of invalidConfigurations) {
+for (const contents of invalidConfigurations) {
+  test(`invalid configuration ${contents} uses defaults with a warning`, () => {
     assert.deepEqual(resolveConfig(contents), {
       config: DEFAULT_CONFIG,
       warning: "Invalid pi-smart-zone configuration; using defaults.",
     });
-  }
-});
+  });
+}

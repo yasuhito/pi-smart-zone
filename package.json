@@ -18,6 +18,7 @@
     "typebox": "*"
   },
   "devDependencies": {
+    "@babel/parser": "^8.0.4",
     "@earendil-works/pi-coding-agent": "^0.85.1",
     "@types/node": "^22.19.0",
     "typescript": "^5.9.3"
@@ -38,7 +39,8 @@
   "scripts": {
     "test": "node --test",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test"
+    "check:test-assertions": "node scripts/check-test-assertions.ts",
+    "check": "npm run typecheck && npm run check:test-assertions && npm test"
   },
   "files": [
     "index.ts",
