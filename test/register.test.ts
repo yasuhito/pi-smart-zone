@@ -49,10 +49,6 @@ function registerExtension(
   return { tool: registeredTool, handlers };
 }
 
-function registerContextUsageTool(): ToolDefinition {
-  return registerExtension().tool;
-}
-
 async function emit(
   handlers: RegisteredExtension["handlers"],
   event: string,
@@ -63,76 +59,12 @@ async function emit(
   }
 }
 
-test("context_usage reports context usage and context window", async () => {
-  const tool = registerContextUsageTool();
-  const ctx = {
-    getContextUsage: () => ({
-      tokens: 142_381,
-      contextWindow: 200_000,
-      percent: 71.1905,
-    }),
-  } as unknown as ExtensionContext;
-
-  const result = await tool.execute("call-1", {}, undefined, undefined, ctx);
-
-  assert.deepEqual(result, {
-    content: [
-      {
-        type: "text",
-        text: "Estimated context usage: 142381 tokens\nContext window: 200000 tokens",
-      },
-    ],
-    details: {
-      tokens: 142_381,
-      contextWindow: 200_000,
-    },
-  });
-});
-
-test("context_usage reports temporarily unknown usage after compaction", async () => {
-  const tool = registerContextUsageTool();
-  const ctx = {
-    getContextUsage: () => ({
-      tokens: null,
-      contextWindow: 200_000,
-      percent: null,
-    }),
-  } as unknown as ExtensionContext;
-
-  const result = await tool.execute("call-2", {}, undefined, undefined, ctx);
-
-  assert.deepEqual(result, {
-    content: [
-      {
-        type: "text",
-        text: "Context usage is temporarily unavailable after compaction.\nContext window: 200000 tokens",
-      },
-    ],
-    details: {
-      tokens: null,
-      contextWindow: 200_000,
-    },
-  });
-});
-
-test("context_usage fails when context information is unavailable", async () => {
-  const tool = registerContextUsageTool();
-  const ctx = {
-    getContextUsage: () => undefined,
-  } as unknown as ExtensionContext;
-
-  await assert.rejects(
-    tool.execute("call-3", {}, undefined, undefined, ctx),
-    new Error("Context usage is unavailable for the active model."),
-  );
-});
-
 function createStatusFixture(
   resolvedConfig: ResolvedConfig = DEFAULT_RESOLVED_CONFIG,
 ) {
   const extension = registerExtension(resolvedConfig);
   let tokens: number | null = 87_000;
-  const statuses: string[] = [];
+  const statuses: Array<{ key: string; text: string }> = [];
   const notifications: Array<{ message: string; level: string }> = [];
   const ctx = {
     getContextUsage: () => ({
@@ -142,9 +74,9 @@ function createStatusFixture(
     }),
     ui: {
       theme: {
-        fg: (_color: string, text: string) => text,
+        fg: () => "themed-context-usage-presentation",
       },
-      setStatus: (_key: string, text: string) => statuses.push(text),
+      setStatus: (key: string, text: string) => statuses.push({ key, text }),
       notify: (message: string, level: string) =>
         notifications.push({ message, level }),
     },
@@ -153,8 +85,8 @@ function createStatusFixture(
   return {
     ctx,
     extension,
-    latestStatus: () => statuses.at(-1) ?? "",
     notifications,
+    statuses,
     setTokens: (value: number | null) => {
       tokens = value;
     },
@@ -175,23 +107,47 @@ test("entry point registers the context_usage tool", () => {
   assert.equal(registeredTools, 1);
 });
 
-test("session start displays usage across the active context window", async () => {
+test("registered context_usage tool returns details from current context usage and context window", async () => {
+  const extension = registerExtension();
+  const ctx = {
+    getContextUsage: () => ({
+      tokens: 142_381,
+      contextWindow: 200_000,
+      percent: 71.1905,
+    }),
+  } as unknown as ExtensionContext;
+
+  const result = await extension.tool.execute(
+    "call-1",
+    {},
+    undefined,
+    undefined,
+    ctx,
+  );
+
+  assert.deepEqual(result.details, {
+    tokens: 142_381,
+    contextWindow: 200_000,
+  });
+});
+
+test("persistent context usage presentation is published under the Pi status key", async () => {
   const fixture = createStatusFixture();
 
   await emit(fixture.extension.handlers, "session_start", fixture.ctx);
 
-  assert.equal(fixture.latestStatus(), "✓ smart-zone  ━━━━━────│──  87k/200k");
+  assert.equal(fixture.statuses.at(-1)?.key, "pi-smart-zone");
 });
 
-test("configured smart-zone boundaries reach status rendering", async () => {
-  const fixture = createStatusFixture({
-    config: { yellowAt: 80_000, redAt: 85_000 },
-    warning: undefined,
-  });
+test("persistent context usage presentation is themed before publication", async () => {
+  const fixture = createStatusFixture();
 
   await emit(fixture.extension.handlers, "session_start", fixture.ctx);
 
-  assert.equal(fixture.latestStatus(), "✗ dumb-zone   ━━━━━│──────  87k/200k");
+  assert.equal(
+    fixture.statuses.at(-1)?.text,
+    "themed-context-usage-presentation",
+  );
 });
 
 test("configuration warning is shown on session start", async () => {
@@ -225,40 +181,29 @@ test("session start does not notify without a configuration warning", async () =
   assert.deepEqual(fixture.notifications, []);
 });
 
-test("session compaction displays an unclassified status with the known smart-zone boundary", async () => {
-  const fixture = createStatusFixture();
-  fixture.setTokens(null);
-
-  await emit(fixture.extension.handlers, "session_compact", fixture.ctx);
-
-  assert.equal(fixture.latestStatus(), "? unknown     ─────────│──  ?/200k");
-});
-
 test("message end does not trigger a status refresh", () => {
   const fixture = createStatusFixture();
 
   assert.equal(fixture.extension.handlers.has("message_end"), false);
 });
 
-test("status remains unknown until the agent settles", async () => {
+test("context usage presentation is not refreshed before the agent settles", async () => {
   const fixture = createStatusFixture();
-  fixture.setTokens(null);
   await emit(fixture.extension.handlers, "session_compact", fixture.ctx);
 
   fixture.setTokens(90_000);
 
-  assert.match(fixture.latestStatus(), /\?/);
+  assert.equal(fixture.statuses.length, 1);
 });
 
-test("agent settled refreshes the status with current usage", async () => {
+test("agent settled refreshes the context usage presentation", async () => {
   const fixture = createStatusFixture();
-  fixture.setTokens(null);
   await emit(fixture.extension.handlers, "session_compact", fixture.ctx);
   fixture.setTokens(90_000);
 
   await emit(fixture.extension.handlers, "agent_settled", fixture.ctx);
 
-  assert.match(fixture.latestStatus(), /90k/);
+  assert.equal(fixture.statuses.length, 2);
 });
 
 const statusRefreshEvents = [

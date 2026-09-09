@@ -2,7 +2,7 @@
 
 A lightweight [Pi](https://github.com/earendil-works/pi-mono) extension that keeps absolute context usage visible, marks the 150k-token smart-zone boundary on a compact progress bar, and lets the agent inspect its context usage when asked.
 
-It preserves Pi's standard footer. The extension adds only a small persistent status line:
+It preserves Pi's standard footer. The extension adds only this persistent context usage presentation:
 
 ```text
 ✓ smart-zone  ━━━━━────│──  87k/200k
@@ -30,7 +30,7 @@ By default:
 
 The thresholds are absolute token counts, while the bar spans the active model's context window. A boundary beyond that window is omitted.
 
-When context usage is unknown, the status is unclassified. It retains a known context window when possible, or falls back to `? unknown     ?/?` when no context information is available.
+When context usage is unknown, the context usage presentation is unclassified. It retains a known context window when possible, or falls back to `? unknown     ?/?` when both context usage and context window are unavailable.
 
 The extension does not replace the footer, send notifications at thresholds, compact automatically, or add commands.
 
