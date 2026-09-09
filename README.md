@@ -7,7 +7,7 @@ It preserves Pi's standard footer. The extension adds only a small persistent st
 ```text
 ✓ smart-zone  ━━━━━────│──  87k/200k
 ! smart-zone  ━━━━━━━━━│──  142k/200k  # warning color
-✗ dumb-zone   ━━━━━━━━━│──  152k/200k  # error color
+✗ dumb-zone   ━━━━━━━━━│━─  180k/200k  # error color
 ```
 
 ## Install
