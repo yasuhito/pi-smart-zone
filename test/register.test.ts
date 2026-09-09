@@ -102,7 +102,12 @@ test("entry point registers the context_usage tool", () => {
     on: () => {},
   } as unknown as ExtensionAPI;
 
-  smartZone(pi);
+  smartZone(pi, {
+    homeDirectory: () => "/test-home",
+    readFile: () => {
+      throw Object.assign(new Error("missing"), { code: "ENOENT" });
+    },
+  });
 
   assert.equal(registeredTools, 1);
 });

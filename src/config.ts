@@ -17,6 +17,16 @@ export interface ResolvedConfig {
   warning: string | undefined;
 }
 
+export interface ConfigurationEnvironment {
+  homeDirectory(): string;
+  readFile(path: string, encoding: "utf8"): string;
+}
+
+const SYSTEM_CONFIGURATION_ENVIRONMENT: ConfigurationEnvironment = {
+  homeDirectory: homedir,
+  readFile: readFileSync,
+};
+
 const INVALID_CONFIG: ResolvedConfig = {
   config: DEFAULT_CONFIG,
   warning: "Invalid pi-smart-zone configuration; using defaults.",
@@ -56,11 +66,18 @@ export function resolveConfig(contents: string | undefined): ResolvedConfig {
   }
 }
 
-export function loadConfig(): ResolvedConfig {
-  const path = join(homedir(), ".pi", "agent", "pi-smart-zone.json");
+export function loadConfig(
+  environment: ConfigurationEnvironment = SYSTEM_CONFIGURATION_ENVIRONMENT,
+): ResolvedConfig {
+  const path = join(
+    environment.homeDirectory(),
+    ".pi",
+    "agent",
+    "pi-smart-zone.json",
+  );
 
   try {
-    return resolveConfig(readFileSync(path, "utf8"));
+    return resolveConfig(environment.readFile(path, "utf8"));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return resolveConfig(undefined);
