@@ -15,7 +15,7 @@ export default function smartZone(pi: ExtensionAPI): void {
 
   const updateStatus = (ctx: ExtensionContext): void => {
     const usage = ctx.getContextUsage();
-    const status = renderStatus(usage?.tokens, config);
+    const status = renderStatus(usage?.tokens, config, usage?.contextWindow);
     ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg(status.color, status.text));
   };
 

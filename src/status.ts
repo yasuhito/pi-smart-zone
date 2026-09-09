@@ -30,19 +30,50 @@ const ZONE_PRESENTATION = {
   { indicator: string; label: string; color: RenderedStatus["color"] }
 >;
 
+const BAR_WIDTH = 12;
+
+function renderContextBar(
+  tokens: number,
+  contextWindow: number,
+  smartZoneBoundary: number,
+): string {
+  const usedCells = Math.round(
+    Math.min(Math.max(tokens / contextWindow, 0), 1) * BAR_WIDTH,
+  );
+  const boundaryCell =
+    smartZoneBoundary <= contextWindow
+      ? Math.min(
+          BAR_WIDTH - 1,
+          Math.round((smartZoneBoundary / contextWindow) * BAR_WIDTH),
+        )
+      : undefined;
+
+  return Array.from({ length: BAR_WIDTH }, (_, index) => {
+    if (index === boundaryCell) return "│";
+    return index < usedCells ? "━" : "─";
+  }).join("");
+}
+
 export function renderStatus(
   tokens: number | null | undefined,
   config: SmartZoneConfig,
+  contextWindow?: number,
 ): RenderedStatus {
+  if (contextWindow === undefined) {
+    return { text: "? unknown     ?/?", color: "dim" };
+  }
+
   const effectiveTokens = tokens ?? 0;
   const zone = classifyZone(effectiveTokens, config);
-  const presentation = ZONE_PRESENTATION[zone];
-  const indicator = tokens == null ? "?" : presentation.indicator;
+  const presentation =
+    tokens == null
+      ? { indicator: "?", label: "unknown", color: "dim" as const }
+      : ZONE_PRESENTATION[zone];
   const current = tokens == null ? "?" : formatTokens(effectiveTokens);
-  const limit = formatTokens(config.redAt);
 
+  const bar = renderContextBar(effectiveTokens, contextWindow, config.redAt);
   return {
-    text: `${indicator} ${presentation.label.padEnd(10)} ${current.padStart(5)}/${limit.padStart(5)}`,
+    text: `${presentation.indicator} ${presentation.label.padEnd(10)}  ${bar}  ${current}/${formatTokens(contextWindow)}`,
     color: presentation.color,
   };
 }

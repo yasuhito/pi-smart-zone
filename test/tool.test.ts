@@ -147,21 +147,21 @@ function createStatusFixture() {
   };
 }
 
-test("session start displays the current usage", async () => {
+test("session start displays usage across the active context window", async () => {
   const fixture = createStatusFixture();
 
   await emit(fixture.extension.handlers, "session_start", fixture.ctx);
 
-  assert.match(fixture.latestStatus(), /87k/);
+  assert.equal(fixture.latestStatus(), "✓ smart-zone  ━━━━━────│──  87k/200k");
 });
 
-test("session compaction displays unknown usage", async () => {
+test("session compaction displays an unclassified status with the known smart-zone boundary", async () => {
   const fixture = createStatusFixture();
   fixture.setTokens(null);
 
   await emit(fixture.extension.handlers, "session_compact", fixture.ctx);
 
-  assert.match(fixture.latestStatus(), /\?/);
+  assert.equal(fixture.latestStatus(), "? unknown     ─────────│──  ?/200k");
 });
 
 test("message end does not trigger a status refresh", () => {

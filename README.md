@@ -1,14 +1,16 @@
 # pi-smart-zone
 
-A lightweight [Pi](https://github.com/earendil-works/pi-mono) extension that keeps absolute context usage visible, changes color around the 150k-token “smart zone” boundary, and lets the agent inspect its context usage when asked.
+A lightweight [Pi](https://github.com/earendil-works/pi-mono) extension that keeps absolute context usage visible, marks the 150k-token smart-zone boundary on a compact progress bar, and lets the agent inspect its context usage when asked.
 
 It preserves Pi's standard footer. The extension adds only a small persistent status line:
 
 ```text
-✓ smart-zone   87k/ 150k
-! smart-zone  142k/ 150k  # warning color
-✗ dumb-zone   152k/ 150k  # error color
+✓ smart-zone  ━━━━━────│──  87k/200k
+! smart-zone  ━━━━━━━━━│──  142k/200k  # warning color
+✗ dumb-zone   ━━━━━━━━━│──  152k/200k  # error color
 ```
+
+The 12-cell bar uses `━` for context usage, `─` for remaining capacity, and `│` for the configured smart-zone boundary.
 
 ## Install
 
@@ -30,7 +32,19 @@ By default:
 
 The indicators use widely recognized, language-independent marks. The warning indicator is the single-column ASCII `!`, avoiding emoji presentation and terminal-width differences.
 
-The thresholds are absolute token counts; they do not change with the selected model's context window. Before context usage is available, the status starts at `0`. If Pi reports usage as unknown immediately after compaction, both the indicator and token count display `?` until usage is available again.
+The thresholds are absolute token counts; they do not change with the selected model's context window. The bar spans the active model's entire context window, so the boundary marker moves proportionally between models. Bar positions are rounded to the nearest cell. If the boundary exceeds the context window, the marker is omitted; if it equals the window, the marker occupies the final cell.
+
+If Pi reports context usage as temporarily unknown immediately after compaction, the status is unclassified while retaining the known context window and smart-zone boundary:
+
+```text
+? unknown     ─────────│──  ?/200k
+```
+
+If context information is unavailable altogether, the bar and ratio are not invented:
+
+```text
+? unknown     ?/?
+```
 
 The extension does not replace the footer, send notifications at thresholds, compact automatically, or add commands.
 
