@@ -8,6 +8,13 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 
 import smartZone from "../index.ts";
+import { DEFAULT_CONFIG, type ResolvedConfig } from "../src/config.ts";
+import { registerSmartZone } from "../src/register.ts";
+
+const DEFAULT_RESOLVED_CONFIG: ResolvedConfig = {
+  config: DEFAULT_CONFIG,
+  warning: undefined,
+};
 
 type ExtensionHandler = (
   event: unknown,
@@ -19,7 +26,9 @@ interface RegisteredExtension {
   handlers: ReadonlyMap<string, readonly ExtensionHandler[]>;
 }
 
-function registerExtension(): RegisteredExtension {
+function registerExtension(
+  resolvedConfig: ResolvedConfig = DEFAULT_RESOLVED_CONFIG,
+): RegisteredExtension {
   let registeredTool: ToolDefinition | undefined;
   const handlers = new Map<string, ExtensionHandler[]>();
   const pi = {
@@ -33,7 +42,7 @@ function registerExtension(): RegisteredExtension {
     },
   } as unknown as ExtensionAPI;
 
-  smartZone(pi);
+  registerSmartZone(pi, resolvedConfig);
   if (registeredTool === undefined) {
     throw new Error("smart-zone did not register the context_usage tool");
   }
@@ -118,10 +127,13 @@ test("context_usage fails when context information is unavailable", async () => 
   );
 });
 
-function createStatusFixture() {
-  const extension = registerExtension();
+function createStatusFixture(
+  resolvedConfig: ResolvedConfig = DEFAULT_RESOLVED_CONFIG,
+) {
+  const extension = registerExtension(resolvedConfig);
   let tokens: number | null = 87_000;
   const statuses: string[] = [];
+  const notifications: Array<{ message: string; level: string }> = [];
   const ctx = {
     getContextUsage: () => ({
       tokens,
@@ -133,7 +145,8 @@ function createStatusFixture() {
         fg: (_color: string, text: string) => text,
       },
       setStatus: (_key: string, text: string) => statuses.push(text),
-      notify: () => {},
+      notify: (message: string, level: string) =>
+        notifications.push({ message, level }),
     },
   } as unknown as ExtensionContext;
 
@@ -141,11 +154,26 @@ function createStatusFixture() {
     ctx,
     extension,
     latestStatus: () => statuses.at(-1) ?? "",
+    notifications,
     setTokens: (value: number | null) => {
       tokens = value;
     },
   };
 }
+
+test("entry point registers the context_usage tool", () => {
+  let registeredTools = 0;
+  const pi = {
+    registerTool: () => {
+      registeredTools += 1;
+    },
+    on: () => {},
+  } as unknown as ExtensionAPI;
+
+  smartZone(pi);
+
+  assert.equal(registeredTools, 1);
+});
 
 test("session start displays usage across the active context window", async () => {
   const fixture = createStatusFixture();
@@ -153,6 +181,48 @@ test("session start displays usage across the active context window", async () =
   await emit(fixture.extension.handlers, "session_start", fixture.ctx);
 
   assert.equal(fixture.latestStatus(), "✓ smart-zone  ━━━━━────│──  87k/200k");
+});
+
+test("configured smart-zone boundaries reach status rendering", async () => {
+  const fixture = createStatusFixture({
+    config: { yellowAt: 80_000, redAt: 85_000 },
+    warning: undefined,
+  });
+
+  await emit(fixture.extension.handlers, "session_start", fixture.ctx);
+
+  assert.equal(fixture.latestStatus(), "✗ dumb-zone   ━━━━━│──────  87k/200k");
+});
+
+test("configuration warning is shown on session start", async () => {
+  const warning = "Invalid pi-smart-zone configuration; using defaults.";
+  const fixture = createStatusFixture({ config: DEFAULT_CONFIG, warning });
+
+  await emit(fixture.extension.handlers, "session_start", fixture.ctx);
+
+  assert.deepEqual(fixture.notifications, [
+    { message: warning, level: "warning" },
+  ]);
+});
+
+test("configuration warning is shown only once", async () => {
+  const fixture = createStatusFixture({
+    config: DEFAULT_CONFIG,
+    warning: "Invalid pi-smart-zone configuration; using defaults.",
+  });
+
+  await emit(fixture.extension.handlers, "session_start", fixture.ctx);
+  await emit(fixture.extension.handlers, "session_start", fixture.ctx);
+
+  assert.equal(fixture.notifications.length, 1);
+});
+
+test("session start does not notify without a configuration warning", async () => {
+  const fixture = createStatusFixture();
+
+  await emit(fixture.extension.handlers, "session_start", fixture.ctx);
+
+  assert.deepEqual(fixture.notifications, []);
 });
 
 test("session compaction displays an unclassified status with the known smart-zone boundary", async () => {
