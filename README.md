@@ -10,8 +10,6 @@ It preserves Pi's standard footer. The extension adds only a small persistent st
 ✗ dumb-zone   ━━━━━━━━━│──  152k/200k  # error color
 ```
 
-The 12-cell bar uses `━` for context usage, `─` for remaining capacity, and `│` for the configured smart-zone boundary.
-
 ## Install
 
 Published as [`pi-smart-zone`](https://www.npmjs.com/package/pi-smart-zone) on npm.
@@ -30,29 +28,15 @@ By default:
 - From 140,000 through 149,999 tokens: `! smart-zone` in Pi's warning color
 - At 150,000 tokens and above: `✗ dumb-zone` in Pi's error color
 
-The indicators use widely recognized, language-independent marks. The warning indicator is the single-column ASCII `!`, avoiding emoji presentation and terminal-width differences.
+The thresholds are absolute token counts, while the bar spans the active model's context window. A boundary beyond that window is omitted.
 
-The thresholds are absolute token counts; they do not change with the selected model's context window. The bar spans the active model's entire context window, so the boundary marker moves proportionally between models. Bar positions are rounded to the nearest cell. If the boundary exceeds the context window, the marker is omitted; if it equals the window, the marker occupies the final cell.
-
-If Pi reports context usage as temporarily unknown immediately after compaction, the status is unclassified while retaining the known context window and smart-zone boundary:
-
-```text
-? unknown     ─────────│──  ?/200k
-```
-
-If context information is unavailable altogether, the bar and ratio are not invented:
-
-```text
-? unknown     ?/?
-```
+When context usage is unknown, the status is unclassified. It retains a known context window when possible, or falls back to `? unknown     ?/?` when no context information is available.
 
 The extension does not replace the footer, send notifications at thresholds, compact automatically, or add commands.
 
 ### Agent tool
 
-The extension registers a read-only `context_usage` tool, described for use only when the user explicitly asks about current context usage, the context window, or remaining context capacity. It returns the estimated context usage and the active model's configured context window as full token counts; it does not return the smart-zone classification or thresholds.
-
-Immediately after compaction, context usage can be temporarily unknown until the next model response. In that state, the tool succeeds with `tokens: null` in its structured details and still returns the context window. If context information is unavailable for the active model altogether, the tool returns an error.
+The read-only `context_usage` tool returns context usage and the active model's context window as full token counts when explicitly requested. After compaction, usage may temporarily be `null` while the context window remains available.
 
 ## Configuration
 
